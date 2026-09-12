@@ -48,40 +48,33 @@ def fetch_bhavcopy_for_date(date_obj):
                 with z.open(csv_filename) as f:
                     df = pd.read_csv(f)
                     
-                    # नए कॉलम के नाम खोजना
                     sym_col = 'TckrSymb' if 'TckrSymb' in df.columns else 'SYMBOL'
                     close_col = 'ClsPric' if 'ClsPric' in df.columns else 'CLOSE'
                     series_col = 'SctySrs' if 'SctySrs' in df.columns else 'SERIES'
                     
-                    # 1. वॉल्यूम कॉलम ढूँढना
                     vol_col = 'TtlTradgVol'
                     for c in ['TtlTradgVol', 'TOTTRDQTY', 'TtlTrdQty', 'TotTrdQty']:
                         if c in df.columns:
                             vol_col = c
                             break
                             
-                    # 2. टर्नओवर कॉलम ढूँढना (TtlTrfVal)
                     turnover_col = 'TtlTrfVal'
                     for c in ['TtlTrfVal', 'TOTTRDVAL', 'TtlTrdVal', 'TotTrdVal']:
                         if c in df.columns:
                             turnover_col = c
                             break
                     
-                    # सिर्फ EQ सीरीज छांटना
                     if series_col in df.columns:
                         df = df[df[series_col].astype(str).str.strip() == 'EQ']
                     
-                    # ETF, GOLD, LIQUID हटाना
                     filter_keywords = 'BEES|ETF|GOLD|LIQUID|CASE|SILVER|LIQ'
                     df = df[~df[sym_col].astype(str).str.contains(filter_keywords, case=False, na=False)]
                     
-                    # --- डेटा को दो भागों में बाँटना ---
-                    
-                    # लिस्ट A: वॉल्यूम के आधार पर टॉप 250
+                    # लिस्ट A: वॉल्यूम टॉप 250
                     df_vol = df.sort_values(by=vol_col, ascending=False).head(250)
                     data_vol = df_vol[[sym_col, vol_col, close_col]].values.tolist()
                     
-                    # लिस्ट B: टर्नओवर के आधार पर टॉप 250
+                    # लिस्ट B: टर्नओवर टॉप 250
                     df_turnover = df.sort_values(by=turnover_col, ascending=False).head(250)
                     data_turnover = df_turnover[[sym_col, turnover_col, close_col]].values.tolist()
                     
@@ -93,7 +86,7 @@ def fetch_bhavcopy_for_date(date_obj):
         print(f"Error: {e}")
         return None, None
 
-# 3. Execution Logic (7 दिन पीछे तक चेक करना)
+# 3. Execution Logic
 date = datetime.now()
 data_vol_to_insert = None
 data_turnover_to_insert = None
@@ -101,7 +94,7 @@ fetched_date_str = ""
 
 for i in range(7):
     test_date = date - timedelta(days=i)
-    if test_date.weekday() >= 5: # Skip Sat/Sun
+    if test_date.weekday() >= 5:
         continue
         
     data_vol, data_turnover = fetch_bhavcopy_for_date(test_date)
@@ -111,27 +104,42 @@ for i in range(7):
         fetched_date_str = test_date.strftime('%d-%b-%Y')
         break
 
-# 4. Update Both Sheets
+# 4. Google Sheets और JSON दोनों में डेटा सेव करना
 if data_vol_to_insert and data_turnover_to_insert:
     try:
-        # A. वॉल्यूम वाली पुरानी शीट अपडेट करें
+        # A. Google Sheet अपडेट करें
         ws_volume.batch_clear(['A2:C251'])
         ws_volume.update('A2', data_vol_to_insert)
         
-        # B. टर्नओवर वाली नई शीट अपडेट करें
         ws_turnover.batch_clear(['A2:C251'])
         ws_turnover.update('A2', data_turnover_to_insert)
         
-        # टाइमस्टैम्प अपडेट करें
         ist_now = (datetime.utcnow() + timedelta(hours=5, minutes=30)).strftime('%d-%b %H:%M')
         status_msg = f"Data Date: {fetched_date_str} | Last Update: {ist_now} (IST)"
         
         ws_volume.update('K2', [[status_msg]])
         ws_turnover.update('K2', [[status_msg]])
         
-        print(f"SUCCESS: दोनों शीट्स (Volume और Turnover) {fetched_date_str} के डेटा से अपडेट हो गई हैं!")
+        # B. हाई-स्पीड CDN के लिए 'stocks.json' फाइल बनाना
+        json_output = {
+            "status": "success",
+            "last_updated": status_msg,
+            "data_date": fetched_date_str,
+            "update_time_ist": ist_now,
+            "top_volume": [
+                {"symbol": str(r[0]), "volume": r[1], "close": r[2]} for r in data_vol_to_insert
+            ],
+            "top_turnover": [
+                {"symbol": str(r[0]), "turnover": r[1], "close": r[2]} for r in data_turnover_to_insert
+            ]
+        }
+        
+        with open('stocks.json', 'w', encoding='utf-8') as f:
+            json.dump(json_output, f, ensure_ascii=False, indent=2)
+            
+        print("SUCCESS: Google Sheets और stocks.json दोनों सफलतापूर्वक अपडेट हो गए!")
     except Exception as e:
-        print(f"Google Sheet अपडेट करने में एरर: {e}")
+        print(f"अपडेट करने में एरर: {e}")
         exit(1)
 else:
     print("FAILED: पिछले 7 दिनों में से किसी भी दिन की फाइल नहीं मिली।")
