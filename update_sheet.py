@@ -92,6 +92,23 @@ def fetch_bhavcopy_for_date(date_obj):
         print(f"Error: {e}")
         return None, None
 
+# सुरक्षित तरीके से शीट डेटा पढ़ने का फ़ंक्शन (बिना किसी हेडर एरर के)
+def get_clean_records(worksheet):
+    data = worksheet.get_all_values()
+    if not data or len(data) < 2:
+        return []
+    headers = [str(h).strip() for h in data[0]]
+    records = []
+    for row in data[1:]:
+        if not any(str(cell).strip() for cell in row):
+            continue
+        row_dict = {}
+        for i, header in enumerate(headers):
+            if header:  # खाली हेडर को छोड़ दें
+                row_dict[header] = row[i] if i < len(row) else ""
+        records.append(row_dict)
+    return records
+
 # 3. पिछले 7 दिनों में से ताज़ा डेटा खोजना
 date = datetime.now()
 data_vol_to_insert = None
@@ -115,27 +132,28 @@ if data_vol_to_insert and data_turnover_to_insert:
     try:
         # A. कच्चा डेटा दोनों इनपुट शीट्स में डालना
         ws_volume.batch_clear(['A2:C251'])
-        ws_volume.update('A2', data_vol_to_insert)
+        ws_volume.update(values=data_vol_to_insert, range_name='A2')
         
         ws_turnover.batch_clear(['A2:C251'])
-        ws_turnover.update('A2', data_turnover_to_insert)
+        ws_turnover.update(values=data_turnover_to_insert, range_name='A2')
         
         # टाइमस्टैम्प बनाना और K2 में डालना
         ist_now = (datetime.utcnow() + timedelta(hours=5, minutes=30)).strftime('%d-%b %H:%M')
         status_msg = f"Data Date: {fetched_date_str} | Last Update: {ist_now} (IST)"
         
-        ws_volume.update('K2', [[status_msg]])
-        ws_turnover.update('K2', [[status_msg]])
+        ws_volume.update(values=[[status_msg]], range_name='K2')
+        ws_turnover.update(values=[[status_msg]], range_name='K2')
         
-        print("Google Sheet अपडेट हो गई। फॉर्मूलों के कैलकुलेशन के लिए 6 सेकंड रुक रहे हैं...")
-        time.sleep(6) # शीट के 200 DMA फॉर्मूलों को री-कैलकुलेट होने का समय देना
+        # फ़ॉर्मूलों (200 DMA, CAR) को पूरा लोड होने के लिए 30 सेकंड का समय दें
+        print("Google Sheet अपडेट हो गई। सभी 200 DMA फॉर्मूलों के कैलकुलेशन के लिए 30 सेकंड रुक रहे हैं...")
+        time.sleep(30)
         
         # B. दोनों Final List शीट्स से फ़िल्टर किया हुआ डेटा निकालना
         ws_final_turnover = workbook.worksheet("Final List Turnover")
         ws_final_volume = workbook.worksheet("Final List Volume")
         
-        turnover_records = ws_final_turnover.get_all_records()
-        volume_records = ws_final_volume.get_all_records()
+        turnover_records = get_clean_records(ws_final_turnover)
+        volume_records = get_clean_records(ws_final_volume)
         
         # C. JSON फाइल तैयार करना (CDN के लिए)
         final_json_data = {
@@ -149,7 +167,7 @@ if data_vol_to_insert and data_turnover_to_insert:
         with open('stocks.json', 'w', encoding='utf-8') as f:
             json.dump(final_json_data, f, ensure_ascii=False, indent=2)
             
-        print("SUCCESS: Google Sheets और stocks.json दोनों सफलता से अपडेट हो गए!")
+        print(f"SUCCESS: {len(turnover_records)} टर्नओवर और {len(volume_records)} वॉल्यूम स्टॉक्स stocks.json में सेव हो गए!")
     except Exception as e:
         print(f"डेटा प्रोसेस/सेव करने में एरर: {e}")
         exit(1)
