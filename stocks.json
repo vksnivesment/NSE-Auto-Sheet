@@ -1,61 +1,35 @@
 {
   "status": "success",
-  "last_updated": "Data Date: 11-Sep-2026 | Last Update: 13-Sep 00:37 (IST)",
+  "last_updated": "Data Date: 11-Sep-2026 | Last Update: 13-Sep 01:15 (IST)",
   "data_date": "11-Sep-2026",
   "final_turnover": [
     {
-      "NSE Code": "PERSISTENT",
-      "Turnover": 1849702728,
-      "Privious Close": 5516,
-      "CMP": 5545,
-      "Difference from 200DMA": 1.88,
-      "CAR": "Buy/Average Out",
+      "NSE Code": "कोई स्टॉक नहीं मिला",
+      "Turnover": "",
+      "Privious Close": "",
+      "CMP": "",
+      "Difference from 200DMA": "",
+      "CAR": "",
       "Extra 1": "",
       "Extra 2": "",
       "Extra 3": "",
       "Extra 4": "",
-      "Sheet Update Date and Time": "Data Date: 11-Sep-2026 | Last Update: 13-Sep 00:37 (IST)"
-    },
-    {
-      "NSE Code": "HYUNDAI",
-      "Turnover": 1059144109,
-      "Privious Close": 2174,
-      "CMP": 2179.4,
-      "Difference from 200DMA": 4.83,
-      "CAR": "Buy/Average Out",
-      "Extra 1": "",
-      "Extra 2": "",
-      "Extra 3": "",
-      "Extra 4": "",
-      "Sheet Update Date and Time": ""
-    },
-    {
-      "NSE Code": "POLICYBZR",
-      "Turnover": 1012414302,
-      "Privious Close": 1797.3,
-      "CMP": 1800,
-      "Difference from 200DMA": 8.86,
-      "CAR": "Buy/Average Out",
-      "Extra 1": "",
-      "Extra 2": "",
-      "Extra 3": "",
-      "Extra 4": "",
-      "Sheet Update Date and Time": ""
+      "Sheet Update Date and Time": "Data Date: 11-Sep-2026 | Last Update: 13-Sep 01:15 (IST)"
     }
   ],
   "final_volume": [
     {
-      "NSE Code": "METAL",
-      "Volume": 2627619,
-      "Privious Close": 13.16,
-      "CMP": 13.14,
-      "Difference from 200DMA": 6.93,
-      "CAR": "Buy/Average Out",
+      "NSE Code": "कोई स्टॉक नहीं मिला",
+      "Volume": "",
+      "Privious Close": "",
+      "CMP": "",
+      "Difference from 200DMA": "",
+      "CAR": "",
       "Extra 1": "",
       "Extra 2": "",
       "Extra 3": "",
       "Extra 4": "",
-      "Sheet Update Date and Time": "Data Date: 11-Sep-2026 | Last Update: 13-Sep 00:37 (IST)"
+      "Sheet Update Date and Time": "Data Date: 11-Sep-2026 | Last Update: 13-Sep 01:15 (IST)"
     }
   ]
 }
