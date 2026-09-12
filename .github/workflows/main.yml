@@ -2,9 +2,12 @@ name: Update NSE Stocks to Google Sheet
 
 on:
   schedule:
-    # यह समय 14:45 UTC है, जिसका मतलब भारत में रात 8:15 PM है
     - cron: '45 14 * * 1-5'
   workflow_dispatch:
+
+# GitHub Actions को फाइल कमिट करने की अनुमति
+permissions:
+  contents: write
 
 jobs:
   update-sheet:
@@ -25,3 +28,11 @@ jobs:
         env:
           GCP_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS }}
         run: python update_sheet.py
+
+      - name: Commit and push stocks.json
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add stocks.json
+          git commit -m "Auto-update stocks.json data [skip ci]" || exit 0
+          git push
